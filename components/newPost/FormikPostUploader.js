@@ -4,6 +4,7 @@ import React,{useState}   from 'react'
 import { Formik } from 'formik'
 import { Button, Divider } from 'react-native-elements'
 import * as yup from 'yup'
+import validUrl from 'valid-url'
 
 const validation_schema=yup.object().shape({imageUrl:yup.string().url().required("Enter a valid URL"),caption:yup.string().max(2200,'Caption Limit Reached').required("Enter a caption")})
 
@@ -27,7 +28,7 @@ const FormikPostUploader = ({navigation}) => {
           {({ handleChange, handleBlur, handleSubmit, values,errors,isValid }) => (
             <>
               <View style={{flexDirection:"row",padding:10}}>
-                <Image source={{uri: tab_Image ? tab_Image : place_holder_image}} style={{height:90,width:90}}/>
+                <Image source={{uri: validUrl.isUri(tab_Image) ? tab_Image : place_holder_image}} style={{height:90,width:90}}/>
                 <TextInput
                 onChange={(e)=>{settab_Image(e.nativeEvent.text)}}
                 name="imageUrl"
