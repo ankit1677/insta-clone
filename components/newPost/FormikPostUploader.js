@@ -1,10 +1,11 @@
 
 import { View, Text,StyleSheet,TextInput,Image } from 'react-native'
-import React,{useState}   from 'react'
+import React,{useState,useEffect}   from 'react'
 import { Formik } from 'formik'
 import { Button, Divider } from 'react-native-elements'
 import * as yup from 'yup'
 import validUrl from 'valid-url'
+import {db,firebase} from '../../firebase'
 
 const validation_schema=yup.object().shape({imageUrl:yup.string().url().required("Enter a valid URL"),caption:yup.string().max(2200,'Caption Limit Reached').required("Enter a caption")})
 
@@ -13,15 +14,53 @@ const place_holder_image="https://media.istockphoto.com/vectors/image-preview-ic
 const FormikPostUploader = ({navigation}) => {
 
   const [tab_Image, settab_Image] = useState(place_holder_image)
+  const [currentLoggedInUser, setcurrentLoggedInUser] = useState(null)
+
+
+  const getUsername = () => {
+    const user = firebase.auth().currentUser
+    const unsubscribe = db.collection('users').
+          where('owner_uid','==',user.uid).
+          limit(1).onSnapshot(snapshot => 
+          snapshot.docs.map(doc=>{
+            setcurrentLoggedInUser({username:doc.data().username,
+              profilePicture:doc.data().profile_pic
+            })
+          }))
+          return unsubscribe  
+  }
+
+useEffect(()=>{
+  getUsername()
+},[])
+
+const uploadPostToFirebase = (imageUrl,caption) => {
+  const unsubscribe = db.collection('users').doc(firebase.auth().currentUser.email).collection('posts')
+  .add({
+    imageUrl:imageUrl,
+    user:currentLoggedInUser.username,
+    profilePicture:currentLoggedInUser.profilePicture,
+    owner_uid:firebase.auth().currentUser.uid,
+    caption:caption,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    likes:0,
+    likes_by_users:[],
+    comments:[],
+  })
+  .then(()=>navigation.navigate('Homescreen'))
+
+  return unsubscribe
+}
+
+
+
   return (
     <View style={styles.container}>
       <Formik
         validationSchema={validation_schema}
         initialValues={{imageUrl:'',caption:''}}
         onSubmit={values => {
-          console.log(values)
-          console.log('Your Post was submitted successfully')
-          navigation.navigate('Homescreen')
+          uploadPostToFirebase(values.imageUrl,values.caption)
         
         }}
         validateOnMount={true}>

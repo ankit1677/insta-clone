@@ -14,7 +14,9 @@ const AuthNavigation = () => {
             return(
                 firebase.auth().onAuthStateChanged(user => userHandler(user))
             )
-        },[]
+        }
+        
+        ,[]
 
     )
   return (
